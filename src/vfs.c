@@ -368,6 +368,7 @@ esp_err_t frogfs_vfs_deregister(const char *base_path)
             if (err != ESP_OK) {
                 return err;
             }
+            vSemaphoreDelete(s_frogfs_vfs[i]->fh_sem);
             free(s_frogfs_vfs[i]);
             s_frogfs_vfs[i] = NULL;
             return ESP_OK;
