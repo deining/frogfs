@@ -13,9 +13,11 @@
 #include "esp_err.h"
 #include "esp_vfs.h"
 
+#include "freertos/idf_additions.h"
 #include "frogfs_config.h"
 #include "frogfs/vfs.h"
 #include "frogfs/frogfs.h"
+#include "portmacro.h"
 
 
 #ifndef CONFIG_FROGFS_MAX_PARTITIONS
@@ -34,6 +36,7 @@ typedef struct {
     frogfs_fs_t *fs;
     char base_path[ESP_VFS_PATH_MAX + 1];
     size_t fh_len;
+    SemaphoreHandle_t fh_sem;
     frogfs_fh_t *fh[];
 } frogfs_vfs_t;
 
@@ -74,7 +77,7 @@ static ssize_t frogfs_vfs_read(void *ctx, int fd, void *data, size_t size)
     return frogfs_read(vfs->fh[fd], data, size);
 }
 
-static int frogfs_vfs_open(void *ctx, const char *path, int flags, int mode)
+static int frogfs_vfs_open_unsafe(void *ctx, const char *path, int flags, int mode)
 {
     frogfs_vfs_t *vfs = (frogfs_vfs_t *) ctx;
 
@@ -106,6 +109,15 @@ static int frogfs_vfs_open(void *ctx, const char *path, int flags, int mode)
     }
 
     return -1;
+}
+
+static int frogfs_vfs_open(void *ctx, const char *path, int flags, int mode)
+{
+    frogfs_vfs_t *vfs = (frogfs_vfs_t *) ctx;
+	xSemaphoreTake(vfs->fh_sem, portMAX_DELAY);
+	int res = frogfs_vfs_open_unsafe(ctx, path, flags, mode);
+	xSemaphoreGive(vfs->fh_sem);
+	return res;
 }
 
 static int frogfs_vfs_close(void *ctx, int fd)
@@ -327,6 +339,7 @@ esp_err_t frogfs_vfs_register(const frogfs_vfs_conf_t *conf)
         return ESP_ERR_NO_MEM;
     }
 
+	vfs->fh_sem = xSemaphoreCreateMutex();
     vfs->fs = conf->fs;
     strlcpy(vfs->base_path, conf->base_path, sizeof(vfs->base_path));
     vfs->fh_len = conf->max_files;
