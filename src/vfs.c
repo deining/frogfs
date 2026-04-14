@@ -12,12 +12,12 @@
 
 #include "esp_err.h"
 #include "esp_vfs.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 
-#include "freertos/idf_additions.h"
 #include "frogfs_config.h"
 #include "frogfs/vfs.h"
 #include "frogfs/frogfs.h"
-#include "portmacro.h"
 
 
 #ifndef CONFIG_FROGFS_MAX_PARTITIONS
