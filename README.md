@@ -180,7 +180,9 @@ python_requirements:
 # or
 
 python_packages:
-  - heatshrink2>=0.13.0
+  - brotli~=1.2.0
+  - heatshrink2~=0.14.0
+  - zopfli~=0.4.1
 ```
 
 When these settings are present, `mkfrogfs.py` installs them into the same
@@ -203,6 +205,8 @@ to `frogfs_init`. Two different ways to specify the filesystem:
   1. a memory address using the `addr` variable:
 
 ```C
+extern const uint8_t frogfs_bin[];
+
 frogfs_config_t frogfs_config = {
     .addr = frogfs_bin,
 };
